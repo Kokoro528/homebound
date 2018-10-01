@@ -1,10 +1,10 @@
 package homebound.dao;
 
-import java.sql.Timestamp;
-import java.time.LocalDateTime;
 import java.util.*;
 
-
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Root;
 
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
@@ -12,7 +12,7 @@ import org.hibernate.SessionFactory;
 import org.hibernate.criterion.Restrictions;
 import org.hibernate.*;
 
-import org.hibernate.Criteria;
+import org.hibernate.query.Query;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -62,12 +62,13 @@ public class MysqlDao extends AbstractDaoImplementaion {
 		Session session = null;
 
 		for (String itemId : itemIds) {
-			PersistentHistory persistentHistory = new PersistentHistory(Timestamp.valueOf(LocalDateTime.now()));
+			PersistentHistory persistentHistory = new PersistentHistory();
 			persistentHistory.setHistoryId(new HistoryId(itemId, userId));
 			try {
 				session = sessionFactory.openSession();
 				session.beginTransaction();
 				session.save(persistentHistory);
+				System.out.println("saving favorited");
 				session.getTransaction().commit();
 			} catch (Exception e) {
 				if (session != null && session.getTransaction() != null) {
@@ -90,7 +91,7 @@ public class MysqlDao extends AbstractDaoImplementaion {
 			session = sessionFactory.openSession();
 			session.beginTransaction();
 			for (String itemId : itemIds) {
-				PersistentHistory persistentHistory = new PersistentHistory(Timestamp.valueOf(LocalDateTime.now()));
+				PersistentHistory persistentHistory = new PersistentHistory();
 				persistentHistory.setHistoryId(new HistoryId(itemId, userId));
 				session.delete(persistentHistory);
 				session.getTransaction().commit();
@@ -114,13 +115,27 @@ public class MysqlDao extends AbstractDaoImplementaion {
 		try {
 			session = sessionFactory.openSession();
 			session.beginTransaction();
+			
+			CriteriaBuilder builder = session.getCriteriaBuilder();
+			
+			CriteriaQuery<PersistentItem> criteriaQuery = builder.createQuery(PersistentItem.class);
+			Root<PersistentItem> piroot = criteriaQuery.from(PersistentItem.class);
+			criteriaQuery.select(piroot).where(builder.equal(piroot.get("itemId"), itemId));
+			PersistentItem pi = session.createQuery(criteriaQuery).uniqueResult();
+			
+			CriteriaQuery<PersistentCategories> cq1 = builder.createQuery(PersistentCategories.class);
+			Root<PersistentCategories> pcroot= cq1.from(PersistentCategories.class);
+			cq1.select(pcroot).where(builder.equal(pcroot.get("persistentItem"), pi));
+			List<PersistentCategories> categoriesList = session.createQuery(cq1).getResultList();
 
-			PersistentItem persistentItem = (PersistentItem) session.createCriteria(PersistentItem.class)
-					.add(Restrictions.eq("itemId", itemId)).uniqueResult();
+			
 
-			List<PersistentCategories> categoriesList = session.createCriteria(PersistentCategories.class)
-					.add(Restrictions.eq("persistentItem", persistentItem)).list();
-
+//			PersistentItem persistentItem = (PersistentItem) session.createCriteria(PersistentItem.class)
+//					.add(Restrictions.eq("itemId", itemId)).uniqueResult();
+//
+//			List<PersistentCategories> categoriesList = session.createCriteria(PersistentCategories.class)
+//					.add(Restrictions.eq("persistentItem", persistentItem)).list();
+//
 			for (PersistentCategories category : categoriesList) {
 				categories.add(category.getCategory());
 			}
@@ -144,16 +159,50 @@ public class MysqlDao extends AbstractDaoImplementaion {
 		try {
 			session = sessionFactory.openSession();
 			session.beginTransaction();
-			List<PersistentHistory> persistentHistories = session.createCriteria(PersistentHistory.class)
-					.add(Restrictions.eq("historyId.userId", userId)).list();
+			
+			CriteriaBuilder builder = session.getCriteriaBuilder();
+			
+			CriteriaQuery<PersistentHistory> criteriaQuery = builder.createQuery(PersistentHistory.class);
+//			Root<HistoryId> hid = criteriaQuery.from(HistoryId.class);
+//			criteriaQuery.select(hid);
+//			criteriaQuery.where(builder.equal(hid.get("userId"), userId));
+//			List<HistoryId> persistentHistories = session.createQuery(criteriaQuery).getResultList();
+			
+			Root<PersistentHistory> phistoryroot = criteriaQuery.from(PersistentHistory.class);
+//			Root<PersistentCategories> pcroot= criteriaQuery.from(PersistentCategories.class);
+			criteriaQuery.select(phistoryroot);
+			criteriaQuery.where(builder.equal(phistoryroot.get("historyId").get("userId"), userId));
+			
+			Query<PersistentHistory> query=session.createQuery(criteriaQuery);
+	         List<PersistentHistory> persistentHistories=query.getResultList();
+//	         System.out.println("persistentHistories length: " + persistentHistories.size());
+//			
+//			CriteriaBuilder builder = entityManager.getCriteriaBuilder();
+//
+//			CriteriaQuery<PersonWrapper> criteria = builder.createQuery( PersonWrapper.class );
+//			Root<Person> root = criteria.from( Person.class );
+//
+//			Path<Long> idPath = root.get( Person_.id );
+//			Path<String> nickNamePath = root.get( Person_.nickName);
+//
+//			criteria.select( builder.construct( PersonWrapper.class, idPath, nickNamePath ) );
+//			criteria.where( builder.equal( root.get( Person_.name ), "John Doe" ) );
+//
+//			List<PersonWrapper> wrappers = entityManager.createQuery( criteria ).getResultList();
+	 
+			
+//			List<PersistentHistory> persistentHistories = session.createCriteria(PersistentHistory.class)
+//					.add(Restrictions.eq("historyId.userId", userId)).list();
 			
 
 			for (PersistentHistory history : persistentHistories) {
+				System.out.println("hahaha");
 				favoriteItems.add(history.getHistoryId().getItemId());
 			}
 
 		} catch (Exception e) {
 			// TODO: handle exception
+			e.printStackTrace();
 		} finally {
 			if (session != null) {
 				session.close();
@@ -165,6 +214,7 @@ public class MysqlDao extends AbstractDaoImplementaion {
 
 	public Set<Item> getFavoriteItems(String userId) {
 
+		System.out.println("enter getFavoriteItems ID");
 		Set<String> itemIds = getFavoriteItemIds(userId);
 		Set<Item> favoriteItems = new HashSet<>();
 
@@ -173,11 +223,15 @@ public class MysqlDao extends AbstractDaoImplementaion {
 
 			session = sessionFactory.openSession();
 			session.beginTransaction();
-
+			CriteriaBuilder builder = session.getCriteriaBuilder();
 			for (String itemId : itemIds) {
-				
-				PersistentItem persistentItem = (PersistentItem) session.createCriteria(PersistentItem.class)
-						.add(Restrictions.eq("itemId", itemId)).uniqueResult();
+				CriteriaQuery<PersistentItem> cq = builder.createQuery(PersistentItem.class);
+				Root<PersistentItem> piroot = cq.from(PersistentItem.class);
+				cq.select(piroot);
+				cq.where(builder.equal(piroot.get("itemId"), itemId));
+				PersistentItem persistentItem = session.createQuery(cq).getSingleResult();
+//				PersistentItem persistentItem = (PersistentItem) session.createCriteria(PersistentItem.class)
+//						.add(Restrictions.eq("itemId", itemId)).uniqueResult();
 				if (persistentItem != null) {
 					favoriteItems.add(convert(persistentItem));
 				}

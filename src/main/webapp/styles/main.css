@@ -5,7 +5,7 @@
 }
 
 body {
-	background: #434343;
+	background: #EECFDE;
 	color: #FFFFFF;
 	font-family: 'Open Sans', sans-serif;
 	font-weight: 300;
@@ -21,7 +21,7 @@ ul {
  */
 .top-header {
 	align-items: center;
-	background: #DF574B;
+	background: #9E8390;
 	box-shadow: 0px 2px 10px #333333;
 	display: flex;
 	height: 60px;
@@ -76,7 +76,7 @@ ul {
 .container>header {
 	align-items: center;
 	background:
-		url('http://folkartcarsi.com/img/4.jpg')
+		url('https://cdn-images-1.medium.com/max/1600/1*7l35YSanSuswwqhnw7Q6kw.jpeg')
 		no-repeat 50% 50%;
 	background-size: 100%;
 	display: flex;
@@ -93,14 +93,14 @@ ul {
 }
 
 .container>header span {
-	color: #FBAF41;
+	color: #8d6f71;
 }
 
 /**
  * main section
  */
 .main-section {
-	background: #F3BB43;
+	background: #e8aec0;
 }
 
 /**
@@ -112,7 +112,7 @@ ul {
 }
 
 .nav-icon {
-	color: #624630;
+	color: #e8aec0;
 	padding: 20px;
 	text-align: center;
 }
@@ -148,8 +148,8 @@ ul {
  * item list
  */
 #item-list {
-	background: #F2EBD9;
-	color: #624630;
+	background: #230211;
+	color: #FFFFFF;
 	list-style: none;
 	margin-left: 180px;
 	min-height: 250px;

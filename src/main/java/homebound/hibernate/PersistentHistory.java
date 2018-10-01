@@ -24,10 +24,6 @@ public class PersistentHistory {
 	@JoinColumn(name = "user_id",insertable=false, updatable=false)
 	private PersistentUser userId;
 	
-	public PersistentHistory(Timestamp lastFavorTime) {
-		super();
-		this.lastFavorTime = lastFavorTime;
-	}
 	@Column(name = "last_favor_time")
 	private Timestamp lastFavorTime;
 	
